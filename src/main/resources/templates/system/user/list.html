@@ -78,7 +78,7 @@
 
 
         <div class="layui-form-item">
-            <label class="layui-form-label">所属部门</label>
+            <label class="layui-form-label">所属机构</label>
             <div class="layui-input-block">
                 <input type="hidden" name="deptid" id="search_deptid">
                 <ul id="selTree4" class="dtree" data-id="0" ></ul></div>
@@ -182,77 +182,8 @@
 
         var mainIndex;
         var url;
-        //打开添加的弹出层
-       function openAddLayer(){
-            mainIndex=layer.open({
-                type:1,
-                content:$("#addOrUpdateDiv"),
-                area:['750px','400px'],
-                title:'添加用户',
-                success:function(){
-                    $("#dataFrm")[0].reset();
-                    $("#deptid").val("");
-                    url="/user/addUser";
-                    var html="<option value='0'>请选择直属领导</option>";
-                    $("#mgr").html(html);
-                    form.render("select");
-                }
-            });
-        }
 
-        //打开修改的弹出层
-        function openUpdateUserLayer(data){
-            mainIndex=layer.open({
-                type:1,
-                content:$("#addOrUpdateDiv"),
-                area:['800px','600px'],
-                title:'修改用户',
-                success:function(){
-                    $("#dataFrm")[0].reset();
-                    $("#deptid").val("");
-                    //装载新的数据
-                    form.val("dataFrm",data);
-                    //选中之前的所属部门  nodeId=data.deptid;
-                    dtree.dataInit("deptTree", data.deptid);
-                    dtree.setSelectValue("deptTree");
 
-                    //选中领导部门
-                    var leaderid=data.mgr;
-                    $.get("/user/loadUserById",{id:leaderid},function(res){
-                        var d=res.data;
-                        dtree.dataInit("leaderdeptTree", d.deptid);
-                        dtree.setSelectValue("leaderdeptTree");
-                        $.get("/user/loadUsersByDeptId",{deptid:d.deptid},function(res){
-                            var users=res.data;
-                            var dom_mgr=$("#mgr");
-                            var html="<option value='0'>请选择直属领导</option>";
-                            $.each(users,function(index,item){
-                                html+="<option value='"+item.id+"'>"+item.name+"</option>";
-                            });
-                            dom_mgr.html(html);
-                            //选中一个
-                            dom_mgr.val(leaderid);
-                            //重新渲染
-                            form.render("select");
-                        });
-                    })
-                    url="/user/updateUser";
-                }
-            });
-        }
-
-        //删除
-        function deleteUser(data){
-            layer.confirm('你确定要删除【'+data.name+'】这条用户吗?', {icon: 3, title:'提示'}, function(index){
-                $.post("/user/deleteUser",{id:data.id},function(res){
-                    if(res.code==200){
-                        tableIns.reload();
-                    }
-                    layer.msg(res.msg);
-                })
-                layer.close(index);
-            });
-        }
 
         $("#add").click(function(){
             openAddLayer();
