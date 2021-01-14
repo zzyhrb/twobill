@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>实时数据</title>
+    <link rel="stylesheet" href="/resources/layui/css/layui.css">
+    <script src="/resources/layui/layui.js"></script>
+    <script src="/resources/js/jquery-1.4.4.min.js"></script>
+
+    <script type="text/javascript">
+
+        layui.use(["element", "table", "form", "layer"], function () {
+
+            var $ = layui.jquery,
+                element = layui.element,
+                layer = layui.layer; //Tab的切换功能，切换事件监听等，需要依赖element模块
+            let form = layui.form;   // 表单
+
+            let sn ="[[${sn}]]"
+            initTable({ 'sn': sn });
+
+        });
+
+        function initTable(data) {
+            layui.use(['element', 'table', 'form', 'layer'], function () {
+                let table = layui.table; // table
+                $.post('/Counts/r_realList', data, function (data) {
+                    //console.log("ddffdfdfd",data.data);
+                    table.render({
+                        data: data.data,
+                        skin: 'line', // 风格。(line row nob)
+                        even: false, // 隔行背景。
+                        elem: '#equiList', // 表格id。
+                        height: 'full-135', // 自动填充，100px边框距离。
+                        page: { theme: '{{ request.session.color }}' }, // 是否分页。
+                        limit: 15, // 初始每页条数。
+                        limits: [10, 15, 20, 25, 30], // 每页条数选择。
+                        method: 'POST', // 请求方法。
+                        cols: [
+                            [
+                                { field: 'sn', title: '设备编码', width: '12%', sort: true, align: 'center' },
+                                { field: 'cdzt', title: '穿戴状态', width: '8%', sort: true, align: 'center', templet: function (d) {
+                                        if (d.cdzt == "0") {
+                                            return '<div style="color: #76EE00">穿戴正确</div>'
+                                        } else {
+                                            return '<span style="color: red">穿戴错误</span>'
+                                        }
+                                    } },
+                                { field: 'qpzt', title: '气瓶状态', width: '8%', sort: true, align: 'center', templet: function (d) {
+                                        if (d.qpzt == "0") {
+                                            return '<div style="color: red">连接错误</div>'
+                                        } else {
+                                            return '<span style="color: #76EE00">连接正确</span>'
+                                        }
+                                    } },
+                                { field: 'fall', title: '跌倒状态', width: '8%', sort: true, align: 'center', templet: function (d) {
+                                        if (d.fall == "1") {
+                                            return '<div style="color: red">跌倒</div>'
+                                        } else {
+                                            return '<span style="color: #76EE00">未跌倒</span>'
+                                        }
+                                    } },
+                                { field: 'inflation', title: '保护状态', width: '9%', sort: true, align: 'center', templet: function (d) {
+                                        if (d.inflation == "0") {
+                                            return '<div style="color: red">未触发保护</div>'
+                                        } else {
+                                            return '<span style="color: #76EE00">触发保护</span>'
+                                        }
+                                    } },
+                                { field: 'bat', title: '电量(%)', width: '8%', align: 'center', templet: function (d) {
+                                        if (d.bat <= 4.2 && d.bat >=3.9) {
+                                            return '<div style="color: #76EE00">电量充足</div>'
+                                        }
+                                        else if (d.bat < 3.9 && d.bat >= 3.8) {
+                                            return '<div>三格</div>'
+                                        }
+                                        else if (d.bat < 3.8 && d.bat >= 3.72) {
+                                            return '<div>二格</div>'
+                                        }
+                                        else if (d.bat < 3.72 && d.bat >= 3.65) {
+                                            return '<div>一格</div>'
+                                        }
+                                        else {
+                                            return '<span style="color: red">电量低</span>'
+                                        }
+                                    }},
+                                { field: 'address', title: '详细地址', width: '15%', align: 'center' },
+                                { field: 'ctime', title: '最新时间', width: '15%', sort: true, align: 'center' },
+                                { field: 'con', title: '用户数量', width: '8%', sort: true, align: 'center' }
+                            ]
+                        ]
+                    });
+                });
+            });
+        }
+
+
+    </script>
+
+</head>
+<body>
+<div class="layui-tab layui-card">
+    <div class="layui-tab-content">
+        <div class="cBody">
+            <table id="equiList" lay-filter="table"></table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

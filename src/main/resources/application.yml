@@ -1,0 +1,35 @@
+
+#配置数据源的属性
+spring:
+  datasource:
+    druid:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://62.234.158.92/fallproof?useUnicode=true&characterEncoding=utf8&nullCatalogMeansCurrent=true&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC
+      username: root
+      password: Yjzn2019..
+   #监控配置
+      stat-view-servlet:
+        enabled: true
+        login-username: root
+        login-password: roo
+  #thymeleaf的配置 
+  thymeleaf: 
+    cache: false
+    enabled: true
+   #设置开发环境
+  profiles:
+    active: dev
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+#配置mybatisplus
+mybatis-plus:
+  mapper-locations:
+  - classpath:mapper/*/*Mapper.xml
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+    banner: true
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

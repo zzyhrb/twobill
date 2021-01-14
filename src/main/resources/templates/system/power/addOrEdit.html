@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>机构添加或编辑</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="/resources/layui/css/layui.css">
+    <script src="/resources/layui/layui.js"></script>
+    <script src="/resources/js/jquery-1.4.4.min.js"></script>
+    <link rel="stylesheet" href="/resources/css/oksub.css">
+
+    <script type = "text/javascript" th:inline="javascript">
+
+        layui.use(['form', 'layer'], function () {
+
+            let form = layui.form;
+            let layer = layui.layer;
+            form.on('submit(frm)', function (data) {
+
+                let id=[[${id}]];//机构编号
+                let name=  $("input[name='name']").val();//机构名称
+                let pid = [[${parentId}]];//机构父ID
+                let  type=[[${type}]];//添加或编辑
+
+                // 判断字段是否为空
+                if (!name) {
+                    layer.msg('请将机构信息填写完整');
+                    return false;
+                }
+
+                $.ajax({
+                    url: '/power/addOrEdit',
+                    type: 'POST',
+                    data: {
+                        id: id
+                        , 'pid': pid
+                        , 'name': name
+                        , 'type': type
+                    },
+                    success: function (response) {
+                        console.log('添加：',response);
+                        if (response.code == 0 &&[[${type}]]=='add') {
+                            layer.msg('添加成功', {
+                                time: 1000 //2秒关闭（如果不配置，默认是3秒）
+                            }, function () {
+                                var index = parent.layer.getFrameIndex(window.name);
+                                parent.layer.close(index);
+                                parent.loadTreeTable(parent.layui);
+                                parent.loadTree(parent.layui);
+                            });
+                        } else if(response.code == 0 &&[[${type}]]=='edit'){
+                            layer.msg('修改成功', {
+                                time: 1000 //2秒关闭（如果不配置，默认是3秒）
+                            }, function () {
+                                var index = parent.layer.getFrameIndex(window.name);
+                                parent.layer.close(index);
+                                parent.loadTreeTable(parent.layui);
+                                parent.loadTree(parent.layui);
+                            });
+                        }else
+                        {
+                            layer.msg('操作失败');
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('执行异常');
+                    }
+                });
+
+                return false;
+            });
+        });
+
+    </script>
+</head>
+<body class="ok-body">
+<form id="frm" class="layui-form" method="post" action="#" lay-filter="frm"
+      style="margin-right: 48px;margin-top: 20px">
+    <input th:value="${type}" name="type">
+    <input th:value="${id}" name="id"><!--子IDtype="hidden" -->
+    <input th:value="${parentId}" name="pid"><!--父ID-->
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">名称</label>
+        <div class="layui-input-block">
+            <input type="text" th:if="${tpower ne null}" name="name" th:value="${tpower.name}" maxlength="100" placeholder="请输入名称" autocomplete="off" class="layui-input" lay-verify="required">
+            <input type="text" th:if="${tpower eq null}" name="name" maxlength="100" placeholder="请输入名称" autocomplete="off" class="layui-input" lay-verify="required">
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <div style="margin-left: 88%">
+            <button id="submit" class="layui-btn" lay-submit="" lay-filter="demo1">立即提交</button>
+        </div>
+    </div>
+
+</form>
+</body>
+</html>

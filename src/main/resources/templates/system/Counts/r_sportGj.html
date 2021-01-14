@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>轨迹</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="/resources/layui/css/layui.css">
+    <script src="/resources/layui/layui.js"></script>
+    <script src="/resources/js/jquery-1.4.4.min.js"></script>
+    <link rel="stylesheet" href="/resources/css/oksub.css">
+    <script type="text/javascript" src="https://api.map.baidu.com/api?v=2.0&ak=uXkaHlzdBMy5PejljoGhycgt"></script>
+
+    <style type="text/css">
+        html {
+            height: 100%;
+        }
+
+        body {
+            height: 100%;
+            margin: 0px;
+            padding: 0px;
+        }
+
+        #container {
+            height: 100%;
+        }
+
+        p {
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        .layui-form-item {
+            margin-bottom: 15px;
+            clear: both;
+            *zoom: 1;
+        }
+
+        .hr {
+            height: 1px;
+            margin: 20px 0px;
+            background: rgb(238, 238, 238);
+            overflow: hidden;
+        }
+
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        ol, ul {
+            list-style: none;
+        }
+
+        .content_box_top li {
+            width: 180px;
+            text-align: center;
+            float: left;
+            margin: 0 20px 30px 60px;
+        }
+
+        .content_box_top li a {
+            width: 82px;
+            height: 82px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .content_box_top li img {
+            border-radius: 100px;
+            -moz-border-radius: 100px;
+            -webkit-border-radius: 100px;
+            -mos-border-radius: 100px;
+            -o-border-radius: 100px;
+            transition: All 1s ease-in-out;
+            -ms-transition: All 1s ease-in-out;
+            -webkit-transition: All 1s ease-in-out;
+            -moz-transition: All 1s ease-in-out;
+            -o-transition: All 1s ease-in-out;
+        }
+
+        .content_box_top li:hover img {
+            border: 1px solid #005e11;
+            transform: rotateY(360deg);
+            -webkit-transform: rotateY(360deg);
+            -moz-transform: rotateY(360deg);
+            -o-transform: rotateY(360deg);
+            -ms-transform: rotateY(360deg);
+        }
+
+        .content_box_top li:hover .obj_title {
+            color: #005e11;
+        }
+
+        .content_box_top li p {
+            font-size: 12px;
+            color: #666666;
+            line-height: 18px;
+            width: 200px;
+            display: block;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+    </style>
+    <script type="text/javascript">
+
+        var carMk;
+        var myIcon = new BMap.Icon("/images/oldPeople.png", new BMap.Size(50, 50), { imageOffset: new BMap.Size(0, 0) });//马里奥
+
+        function mapInit() {
+
+            layui.use(['element', 'form', 'laydate'], function () {
+
+                var $ = layui.jquery,
+                    element = layui.element;
+                let form = layui.form;
+                let laydate = layui.laydate;
+                laydate.render({
+                    elem: '#time'
+                    , range: true
+                });
+
+                let sn="[[${sn}]]" ;//得到map中的sn
+                let time = $("#time").val();
+                initTable({'sn': sn, 'time': time});
+
+                // 监听提交中
+                form.on('submit(selectUser)', function (data) {
+                    let sn="[[${sn}]]" ;//得到map中的sn
+                    let time = $("#time").val();
+                    initTable({'sn': sn, 'time': time});
+                    return false
+                });
+
+                function initTable(data) {
+
+                    $.post('/Counts/getr_sportGj/', data, function (data) {
+
+                        let datanew=data.msg;
+                        console.log(datanew);
+
+                        let map = new BMap.Map("container", {enableMapClick: true});    // 创建Map实例
+
+                        map.addControl(new BMap.MapTypeControl({   //添加地图类型控件
+                            mapTypes: [
+                                BMAP_NORMAL_MAP
+                            ]
+                        }));
+                        map.enableScrollWheelZoom(true);     //开启鼠标滚轮缩放
+
+                        let latData = [];
+                        let longData = [];
+                        let datas = jQuery.parseJSON(datanew);
+                        console.log("157:->",datas);
+                        let wl = datas['wl'];
+                        let gj = datas['gj'];
+
+                        if (wl.length != 0 && gj.length == 0) {
+                            map.centerAndZoom(new BMap.Point(JSON.parse(wl[0].data)[0][0], JSON.parse(wl[0].data)[0][1]), 15);  // 初始化地图,设置中心点坐标和地图级别
+                            wl1()
+                        } else if (wl.length == 0 && gj.length != 0) {
+                            map.centerAndZoom(new BMap.Point(gj[0]['jd'], gj[0]['wd']), 15);  // 初始化地图,设置中心点坐标和地图级别
+                            for (let l = 0; l < gj.length; l++) {
+                                longData.push(gj[l]['jd']);
+                                latData.push(gj[l]['wd']);
+                            }
+                            goWay(longData, latData);
+
+                            /*---------------------------------------------------------------- 画轨迹 开始----------------------------------------- */
+                            function goWay(longData, latData) {
+                                for (let i = 1; i < longData.length; i++) {
+                                    let startLong = longData[i - 1];
+                                    let startLat = latData[i - 1];
+                                    let endLong = longData[i]; // 读取经纬度
+                                    let endLat = latData[i];
+                                    drawIcon(startLong, startLat, endLong, endLat);
+                                }
+                            }
+
+                            function drawGreenLine(startLong, startLat, endLong, endLat) {
+                                var polyline = new BMap.Polyline([
+                                    new BMap.Point(startLong, startLat),//起始点的经纬度
+                                    new BMap.Point(endLong, endLat)//终止点的经纬度
+                                ], {
+                                    strokeColor: "forestgreen",//设置颜色
+                                    strokeWeight: 5, //宽度
+                                    strokeOpacity: 1
+                                });//透明度
+                                map.addOverlay(polyline); //将标注添加到地图中
+                            }
+
+                            function drawIcon(startLong, startLat, endLong, endLat) {
+                                if (carMk) {
+                                    map.removeOverlay(carMk);
+                                }
+                                carMk = new BMap.Marker(
+                                    new BMap.Point(endLong, endLat),
+                                    { icon: new BMap.Icon("/resources/images/oldPeople.png", new BMap.Size(50, 50), { imageOffset: new BMap.Size(0, 0) }) });
+                                map.addOverlay(carMk);
+                                drawGreenLine(startLong, startLat, endLong, endLat);
+                            }
+
+                            /*---------------------------------------------------------------- 画轨迹 结束----------------------------------------- */
+
+                        } else if (wl.length == 0 && gj.length == 0) {
+                            map.centerAndZoom(new BMap.Point(126.576601, 45.726261), 15);  // 初始化地图,设置中心点坐标和地图级别
+                        } else {
+
+                            map.centerAndZoom(new BMap.Point(JSON.parse(wl[0].data)[0][0], JSON.parse(wl[0].data)[0][1]), 15);  // 初始化地图,设置中心点坐标和地图级别
+                            wl1();
+                            for (let l = 0; l < gj.length; l++) {
+                                longData.push(gj[l]['jd']);
+                                latData.push(gj[l]['wd']);
+                            }
+                            goWay(longData, latData);
+
+                            /*---------------------------------------------------------------- 画轨迹 开始----------------------------------------- */
+                            function goWay(longData, latData) {
+                                for (let i = 1; i < longData.length; i++) {
+                                    let startLong = longData[i - 1];
+                                    let startLat = latData[i - 1];
+                                    let endLong = longData[i]; // 读取经纬度
+                                    let endLat = latData[i];
+                                    drawIcon(startLong, startLat, endLong, endLat);
+                                }
+                            }
+
+                            function drawGreenLine(startLong, startLat, endLong, endLat) {
+                                var polyline = new BMap.Polyline([
+                                    new BMap.Point(startLong, startLat),//起始点的经纬度
+                                    new BMap.Point(endLong, endLat)//终止点的经纬度
+                                ], {
+                                    strokeColor: "forestgreen",//设置颜色
+                                    strokeWeight: 5, //宽度
+                                    strokeOpacity: 1
+                                });//透明度
+                                map.addOverlay(polyline); //将标注添加到地图中
+                            }
+
+                            function drawIcon(startLong, startLat, endLong, endLat) {
+                                if (carMk) {
+                                    map.removeOverlay(carMk);
+                                }
+                                carMk = new BMap.Marker(
+                                    new BMap.Point(endLong, endLat),
+                                    { icon: new BMap.Icon("/resources/images/oldPeople.png", new BMap.Size(50, 50), { imageOffset: new BMap.Size(0, 0) }) });
+                                map.addOverlay(carMk);
+                                drawGreenLine(startLong, startLat, endLong, endLat);
+                            }
+
+                            /*---------------------------------------------------------------- 画轨迹 结束----------------------------------------- */
+                        }
+
+                        // 画围栏
+                        function wl1() {
+                            for (var j = 0; j < wl.length; j++) {
+                                let wllist = [];
+                                for (var k = 0; k < JSON.parse(wl[j].data).length; k++) {
+                                    let jds = JSON.parse(wl[j].data)[k][0];
+                                    let wds = JSON.parse(wl[j].data)[k][1];
+                                    wllist.push(new BMap.Point(jds, wds))
+                                }
+
+                                var polygon = new BMap.Polygon(wllist, {
+                                    strokeColor: "blue",
+                                    strokeWeight: 2,
+                                    strokeOpacity: 0.5
+                                });
+                                map.addOverlay(polygon);
+
+                                var tagMarkerIcon = new BMap.Icon("http://api.map.baidu.com/img/markers.png", new BMap.Size(23, 25), {
+                                    imageOffset: new BMap.Size(0, 0 - 13 * 25) // 设置图片偏移
+                                });
+                                var marker1 = new BMap.Marker(new BMap.Point(JSON.parse(wl[j].data)[0][0], JSON.parse(wl[j].data)[0][1]), {icon: tagMarkerIcon});
+                                var label1 = new BMap.Label(wl[j].title, {offset: new BMap.Size(0, -18)});
+                                label1.setStyle({
+                                    color: "red",
+                                    fontSize: "30px",
+                                    backgroundColor: "0.05",
+                                    border: "0",
+                                    fontWeight: "bold"
+                                });
+                                marker1.setLabel(label1);
+                                map.addOverlay(marker1);
+                            }
+                        }
+
+                    });
+                }
+
+            });
+
+        }
+
+        function gotoApply(obj, pageNo, pageName) {
+            parent.menuCAClick(obj, this, pageNo, pageName, 'list')
+        }
+
+        window.onload = mapInit(); // 异步加载地图
+
+        </script>
+
+</head>
+<body>
+<form class="layui-form" action="#" method="post">
+    <div class="layui-form-item" style="margin-left: 10px;margin-top: 10px">
+        <div class="layui-input-inline" style="width: 180px;">
+            <input type="text" name="time" id="time" placeholder="请选择时间区间" autocomplete="off" class="layui-input" />
+        </div>
+        <button class="layui-btn" lay-submit lay-filter="selectUser">
+            <i class="layui-icon layui-icon-search"> </i> 检索
+        </button>
+    </div>
+</form>
+<div style="width: 100%;height: 100%; background-color: #F5F3F0;" id="container">
+</div>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans" >
+<head>
+    <meta charset="UTF-8">
+    <title>机构列表</title>
+    <link rel="stylesheet" href="/resources/layui/css/layui.css">
+    <script src="/resources/layui/layui.js"></script>
+    <script src="/resources/js/jquery-1.4.4.min.js"></script>
+
+    <style>
+    </style>
+    <script>
+        let insTb;
+
+        //设定扩展的 layui 模块的所在目录，一般用于外部模块扩展
+        layui.config({base: '/resources/layui/lay/modules/'})
+
+            //.extend({treetable: '/resources/layui/lay/modules/'});
+        layui.use(["element", "table", "laydate", "tree","util","treeTable"], function () {
+            let tree = layui.tree
+                ,layer = layui.layer
+                ,util = layui.util
+
+            //调用加载树形结构
+            treeData(tree);
+
+            //加载treetable
+            loadTreeTable(layui);
+
+            // 搜索
+            $("#btnSearch").bind("click", function () {
+                var keywords = $('#menuname').val();
+                if (keywords) {
+                    insTb.filterData(keywords);
+                } else {
+                    insTb.clearFilter();
+                }
+            })
+
+        });
+
+        //tree 数据加载
+        function treeData(tree) {
+            $.ajax({
+                method: 'get',
+                async: false,
+                url: '/power/tree',
+                success: (data) => {
+                    if (data != null) {
+                        console.log('树形框数据：',data);
+                        //let tree = layui.tree;
+                        tree.render({
+                            elem: '#test1' //绑定元素
+                            , showCheckbox: true
+                            , id: 'demoId1'
+                            , showLine: true
+                            ,data: data.data,
+                        });
+                    }
+                },
+                dataType: 'json'
+            })
+        }
+
+        // treerable 数据加载
+        function loadTreeTable(layui) {
+            let treeTable = layui.treeTable;
+            insTb = treeTable.render({
+                elem: '#tree-table',
+                url: '/power/tree',
+                icon_key: 'title',
+                height: "full-60",
+                method: 'post',
+                tree: {
+                    iconIndex: 0,           // 折叠图标显示在第几列
+                    isPidData: true,        // 是否是id、pid形式数据
+                    idName: 'id',  // id字段名称
+                    pidName: 'pid'     // pid字段名称
+                },
+                cols: [
+                    { field: 'title', title: '机构名称', minWidth: 165 },
+                    {
+                        title: '机构图标', align: 'center', hide: true,
+                        templet: '<p><i class="layui-icon {{d.menuIcon}}"></i></p>'
+                    },
+                    { field: 'id', title: 'ID', align: 'center' },
+                    { field: 'pid', title: '父ID', align: 'center' },
+                    { align: 'center', toolbar: '#tbBar', title: '操作', width: 200 }
+                ]
+            });
+            // 头部工具栏点击事件
+            treeTable.on('tool(tree-table)', function (obj) {
+                console.log(obj.data)
+                switch (obj.event) {
+                    case 'add':
+                        addagency(obj.data);
+                        break;
+                    case 'del':
+                        deleteagency(obj.data);
+                        break;
+                    case 'edit':
+                        editagency(obj.data);
+                        break;
+                }
+            });
+        }
+
+        // 机构添加方法
+        function addagency(event) {
+
+            let Id = event.id;//再此下级添加
+            layer.open({
+                id: 'addagency', // 弹出层ID
+                type: 2, // 类型(2 框架页)
+                anim: 1, // 弹出动画
+                title: '添加机构', // 弹出层标题
+                area: ['50%', '60%'], // 弹出层大小
+                scrollbar: true,
+                method: 'get', // 请求方式
+                content: '/power/addOrEditPage/?parentId=' + Id + '&type=add', //这里content是一个普通的String
+            });
+        }
+
+        // 修改机构方法
+        function editagency(event) {
+            let id = event.id;
+            layer.open({
+                id: 'editagency', // 弹出层ID
+                type: 2, // 类型(2 框架页)
+                anim: 1, // 弹出动画
+                title: '编辑机构', // 弹出层标题
+                area: ['50%', '60%'], // 弹出层大小
+                scrollbar: true,
+                method: 'get', // 请求方式
+                content: '/power/addOrEditPage/?parentId=' + id + '&type=edit'//这里content是一个普通的String
+            });
+        }
+
+        // 机构删除方法
+        function deleteagency(event) {
+            let id = event.id;
+            if (id.toString().length > 2) {
+                layer.open({
+                    title: '确认删除'
+                    , area: ['200px', '180px']
+                    , content: '请确认是否删除!'
+                    , btn: ['删除', '关闭']
+                    , yes: function () {
+
+                        $.ajax({
+                            url: '/power/delete',
+                            type: 'POST',
+                            data: { 'id': id },
+                            success: function (response) {
+                                if (response.code == 0) {
+                                    layer.msg('删除成功', {
+                                        time: 1000 //2秒关闭（如果不配置，默认是3秒）
+                                    }, function () {
+                                        loadTreeTable(layui)
+                                        loadTree(layui);
+                                    });
+
+                                } else if (response.code == 1) {
+                                    layer.msg('此机构下存在子目录,请删除此机构下的所有子目录后再删除');
+                                }
+                            },
+                            error: function (data) {
+                                layer.msg('删除失败');
+                            }
+                        });
+
+                        return false;
+
+                    }
+                    , btn2: function () {
+                        layer.close();
+                    }
+                });
+            } else {
+                layer.msg('此菜单不支持修改')
+            }
+
+        }
+
+
+
+    </script>
+    <script type="text/html" id="tbBar">
+        <a class="layui-btn layui-btn layui-btn-xs" lay-event="add">添加</a>
+        <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="edit">修改</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    </script>
+
+</head>
+<body class="layui-bg-gray">
+<div class="cBody">
+    <div class="layui-row layui-col-space10">
+        <div class="layui-col-md3">
+            <div class="layui-card">
+                <div class="layui-card-header">机构结构</div>
+                <div class="layui-card-body" id="card-tree">
+                    <ul id="test1" class="dtree" data-id="0"></ul>
+                </div>
+            </div>
+        </div>
+        <div class="layui-col-md9">
+            <div class="layui-card">
+                <div class="layui-card-body" id="card-content">
+                    <form class="layui-form" action="#" method="post">
+                        <div class="layui-form-item">
+                            <div class="layui-input-inline">
+                                <input type="text" name="menuName" id="menuname" placeholder=机构名称 autocomplete="off"
+                                       class="layui-input">
+                            </div>
+                            <div class="layui-input-inline">
+                                <button class="layui-btn" type="button" id="btnSearch">检索</button>
+                            </div>
+
+                            <div style="float: right;margin-right: 100px" id="cont"></div>
+                        </div>
+                    </form>
+                    <table style="height: 100%" class="layui-table layui-form" id="tree-table" lay-size="sm"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

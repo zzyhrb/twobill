@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>实时数据</title>
+    <link rel="stylesheet" href="/resources/layui/css/layui.css">
+    <script src="/resources/layui/layui.js"></script>
+    <script src="/resources/js/jquery-1.4.4.min.js"></script>
+
+    <script type="text/javascript">
+
+        layui.use(["element", "table", "form", "layer"], function () {
+
+            var $ = layui.jquery,
+                element = layui.element,
+                layer = layui.layer; //Tab的切换功能，切换事件监听等，需要依赖element模块
+            let form = layui.form;   // 表单
+
+            let sn = $("#sn").val();
+            initTable({ 'sn': sn });
+
+            // 监听提交中
+            form.on('submit(selectUser)', function (data) {
+                let sn = $("#sn").val();
+                initTable({ 'sn': sn });
+                return false
+            });
+
+        });
+
+        function initTable(data) {
+            layui.use(['element', 'table', 'form', 'layer'], function () {
+                let table = layui.table; // table
+                $.post('/Counts/r_realList', data, function (data) {
+
+                    table.render({
+                        data: data.data,
+                        skin: 'line', // 风格。(line row nob)
+                        even: false, // 隔行背景。
+                        elem: '#equiList', // 表格id。
+                        height: 'full-135', // 自动填充，100px边框距离。
+                        page: { theme: '{{ request.session.color }}' }, // 是否分页。
+                        limit: 15, // 初始每页条数。
+                        limits: [10, 15, 20, 25, 30], // 每页条数选择。
+                        method: 'POST', // 请求方法。
+                        cols: [
+                            [
+                            { field: 'sn', title: '设备编码', width: '12%', sort: true, align: 'center' },
+                            { field: 'cdzt', title: '穿戴状态', width: '8%', sort: true, align: 'center', templet: function (d) {
+                                    if (d.cdzt == "0") {
+                                        return '<div style="color: #76EE00">穿戴正确</div>'
+                                    } else {
+                                        return '<span style="color: red">穿戴错误</span>'
+                                    }
+                                } },
+                            { field: 'qpzt', title: '气瓶状态', width: '8%', sort: true, align: 'center', templet: function (d) {
+                                    if (d.qpzt == "0") {
+                                        return '<div style="color: red">连接错误</div>'
+                                    } else {
+                                        return '<span style="color: #76EE00">连接正确</span>'
+                                    }
+                                } },
+                            { field: 'fall', title: '跌倒状态', width: '8%', sort: true, align: 'center', templet: function (d) {
+                                    if (d.fall == "1") {
+                                        return '<div style="color: red">跌倒</div>'
+                                    } else {
+                                        return '<span style="color: #76EE00">未跌倒</span>'
+                                    }
+                                } },
+                            { field: 'inflation', title: '保护状态', width: '9%', sort: true, align: 'center', templet: function (d) {
+                                    if (d.inflation == "0") {
+                                        return '<div style="color: red">未触发保护</div>'
+                                    } else {
+                                        return '<span style="color: #76EE00">触发保护</span>'
+                                    }
+                                } },
+                            { field: 'bat', title: '电量(%)', width: '8%', align: 'center', templet: function (d) {
+                                    if (d.bat <= 4.2 && d.bat >=3.9) {
+                                        return '<div style="color: #76EE00">电量充足</div>'
+                                    }
+                                    else if (d.bat < 3.9 && d.bat >= 3.8) {
+                                        return '<div>三格</div>'
+                                    }
+                                    else if (d.bat < 3.8 && d.bat >= 3.72) {
+                                        return '<div>二格</div>'
+                                    }
+                                    else if (d.bat < 3.72 && d.bat >= 3.65) {
+                                        return '<div>一格</div>'
+                                    }
+                                    else {
+                                        return '<span style="color: red">电量低</span>'
+                                    }
+                                }},
+                            { field: 'address', title: '详细地址', width: '15%', align: 'center' },
+                            { field: 'ctime', title: '最新时间', width: '15%', sort: true, align: 'center' },
+                            //{ field: 'jd', title: '经度', width: '10%', align: 'center' },
+                            //{ field: 'wd', title: '纬度', width: '10%', align: 'center' },
+                            //{ field: 'con', title: '摔倒次数', width: '10%', sort: true, align: 'center' },
+                            { field: 'con', title: '用户数量', width: '8%', sort: true, align: 'center' },
+                            { fixed: 'id', title: '操作', toolbar: '#barDemo', width: '9%', align: 'center', fixed: 'right' },
+                        ]
+                        ]
+                    });
+                    // 头部工具栏点击事件
+                    table.on('tool(table)', function (obj) {
+                        console.log(obj.data);
+                        switch (obj.event) {
+                            case 'yh':
+                                yh(obj.data);
+                                break;
+                            case 'sd':
+                                sd(obj.data);
+                                break;
+                            case 'bs':
+                                bs(obj.data);
+                                break;
+                            case 'gj':
+                                gj(obj.data);
+                                break;
+                        }
+                    });
+                });
+            });
+        }
+
+        // 查看用户数据
+        function yh(data) {
+            let sn = data.sn;
+            console.log('sn：',sn);
+
+            layer.open({
+                id: 'yhdate', // 弹出层ID
+                type: 2, // 类型(2 框架页)
+                anim: 1, // 弹出动画
+                title: '查看用户数据', // 弹出层标题
+                area: ['50%', '60%'], // 弹出层大小
+                scrollbar: true,
+                method: 'get', // 请求方式
+                content: '/Counts/r_yhList/?sn=' + sn, //这里content是一个普通的String
+            });
+        }
+
+        // 查看轨迹
+        function gj(data) {
+            let sn = data.sn;
+            layer.open({
+                type: 2,
+                title: ' ',
+                content: '/Counts/r_sportGj/?sn=' + sn,
+                area: ['100%', '100%'],
+                btn: []
+            });
+        }
+
+    </script>
+
+
+    <script type="text/html" id="barDemo">
+       <!-- <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="sd">摔倒</a>-->
+        <a class="layui-btn layui-btn-checked layui-btn-xs" lay-event="yh">用户</a>
+        <!--<a class="layui-btn layui-btn-xs layui-btn-xs" lay-event="bs">步数</a>-->
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="gj">轨迹</a>
+    </script>
+</head>
+<body>
+<div class="layui-tab layui-card">
+    <div class="layui-tab-content">
+        <div class="cBody">
+            <form class="layui-form" action="#" method="post">
+                <div class="layui-form-item">
+                    <div class="layui-input-inline" style="width: 180px;">
+                        <input type="text" name="sn" id="sn" placeholder="请输入设备编码" autocomplete="off"
+                               class="layui-input" >
+                    </div>
+                    <button class="layui-btn" lay-submit lay-filter="selectUser">
+                        <i class="layui-icon layui-icon-search"></i> 检索
+                    </button>
+                </div>
+            </form>
+
+            <table id="equiList" lay-filter="table"></table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

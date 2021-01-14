@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>用户管理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="/resources/layui/css/layui.css">
+    <script src="/resources/layui/layui.js"></script>
+    <script src="/resources/js/jquery-1.4.4.min.js"></script>
+    <link rel="stylesheet" href="/resources/css/oksub.css">
+    <style>
+        p {
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        .layui-form-item {
+            margin-bottom: 15px;
+            clear: both;
+            *zoom: 1;
+        }
+
+        .hr {
+            height: 1px;
+            margin: 20px 0px;
+            background: rgb(238, 238, 238);
+            overflow: hidden;
+        }
+
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        ol, ul {
+            list-style: none;
+        }
+
+        .content_box_top li {
+            width: 180px;
+            text-align: center;
+            float: left;
+            margin: 0 20px 30px 60px;
+        }
+
+        .content_box_top li a {
+            width: 82px;
+            height: 82px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .content_box_top li img {
+            border-radius: 100px;
+            -moz-border-radius: 100px;
+            -webkit-border-radius: 100px;
+            -mos-border-radius: 100px;
+            -o-border-radius: 100px;
+            transition: All 1s ease-in-out;
+            -ms-transition: All 1s ease-in-out;
+            -webkit-transition: All 1s ease-in-out;
+            -moz-transition: All 1s ease-in-out;
+            -o-transition: All 1s ease-in-out;
+        }
+
+        .content_box_top li:hover img {
+            border: 1px solid #005e11;
+            transform: rotateY(360deg);
+            -webkit-transform: rotateY(360deg);
+            -moz-transform: rotateY(360deg);
+            -o-transform: rotateY(360deg);
+            -ms-transform: rotateY(360deg);
+        }
+
+        .content_box_top li:hover .obj_title {
+            color: #005e11;
+        }
+
+        .content_box_top li p {
+            font-size: 12px;
+            color: #666666;
+            line-height: 18px;
+            width: 200px;
+            display: block;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+    </style>
+    <script type="text/javascript">
+
+        layui.use(['element', 'table', 'form', 'layer', 'tree'], function () {
+
+            var $ = layui.jquery,
+                element = layui.element,
+                layer = layui.layer; //Tab的切换功能，切换事件监听等，需要依赖element模块
+            let form = layui.form;   // 表单
+            let table = layui.table;   // 表单
+
+            let sn="[[${sn}]]" ;//得到map中的sn
+
+            $.ajax({
+                method: 'POST',
+                async: false,
+                url: '/Counts/getr_yhList/?sn='+sn,
+                success: (data) => {
+                    if(data !=null)
+                    {
+                        table.render({
+                            data: data.data,
+                            skin: 'line', // 风格。(line row nob)
+                            even: false, // 隔行背景。
+                            elem: '#equiList', // 表格id。
+                            height: 'full-85', // 自动填充，100px边框距离。
+                            page: {theme: '{{ request.session.color }}'}, // 是否分页。
+                            limit: 15, // 初始每页条数。
+                            limits: [10, 15, 20, 25, 30], // 每页条数选择。
+                            method: 'POST', // 请求方法。
+                            cols: [
+                                [
+                                    {field: 'telephone', title: '电话号码', width: '50%', align: 'center'},
+                                    {field: 'ctime', title: '注册时间', width: '50%', sort: true, align: 'center'},
+                                ]
+                            ]
+                        });
+                    }
+                },
+                dataType: 'json'
+            })
+
+        });
+
+    </script>
+
+    <script type="text/html" id="barDemo">
+        <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="sd">查看摔倒数据</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="yh">查看用户数据</a>
+    </script>
+</head>
+
+<body>
+<div class="layui-tab layui-card">
+    <div class="layui-tab-content">
+
+        <div class="cBody">
+            <table id="equiList" lay-filter="table"></table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

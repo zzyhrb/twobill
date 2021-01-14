@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans" >
+<head>
+    <meta charset="UTF-8">
+    <title>角色列表</title>
+    <link rel="stylesheet" href="/resources/layui/css/layui.css">
+    <script src="/resources/layui/layui.js"></script>
+    <script src="/resources/js/jquery-1.4.4.min.js"></script>
+    <style>
+    </style>
+    <script>
+        let insTb;
+
+        layui.use(["element", "table", "form", "layer"], function () {
+            let $ = layui.jquery,
+                element = layui.element,
+                layer = layui.layer; //Tab的切换功能，切换事件监听等，需要依赖element模块
+            let form = layui.form;   // 表单
+
+            let rname = $("#rname").val();
+            initTable({ 'rname': rname });
+
+            // 监听提交
+            form.on('submit(selectRole)', function (data) {
+                let rname = $("#rname").val();
+                if (rname) {
+                    initTable({ 'rname': rname });
+                }
+                else {
+                    initTable();
+                }
+                return false
+            });
+
+            // 添加角色
+            $("#addrole").on('click', function () {
+                layer.open({
+                    id: 'addrolePage', // 弹出层ID
+                    type: 2, // 类型(2 框架页)
+                    anim: 1, // 弹出动画
+                    title: '添加角色', // 弹出层标题
+                    area: ['50%', '60%'], // 弹出层大小
+                    scrollbar: true,
+                    method: 'get', // 请求方式
+                    content: '/role/add/'
+                });
+            });
+
+
+        });
+
+        //获取数据列表
+        function initTable(data) {
+            layui.use(['element', 'table', 'form', 'layer'], function () {
+                let table = layui.table; // table
+                $.post('/role/list', data, function (data) {
+                    console.log('数据：',data.data);
+
+                    table.render({
+                        data: data.data,
+                        skin: 'line', // 风格。(line row nob)
+                        even: false, // 隔行背景。
+                        elem: '#roleList', // 表格id。
+                        height: 'full-135', // 自动填充，100px边框距离。
+                        page: { theme: '{{ request.session.color }}' }, // 是否分页。
+                        limit: 15, // 初始每页条数。
+                        limits: [10, 15, 20, 25, 30], // 每页条数选择。
+                        method: 'POST', // 请求方法。
+                        cols: [
+                            [
+                            { field: 'rid', title: '标识', width: '10%', sort: true, align: 'center', hide: true },
+                            { field: 'rname', title: '角色名称', width: '10%', sort: true, align: 'center' },
+                            { field: 'pname', title: '机构名称', width: '15%', sort: true, align: 'center' },
+                            { field: 'mname', title: '功能权限', width: '40%', sort: true, align: 'center' },
+                            { field: 'remark', title: '备注', width: '20%', sort: true, align: 'center' },
+                            { fixed: 'id', title: '操作', toolbar: '#barDemo', width: '15%', align: 'center', fixed: 'right' },
+                        ]
+                        ]
+                    });
+                    // 头部工具栏点击事件
+                    table.on('tool(table)', function (obj) {
+                        console.log(obj.data);
+                        switch (obj.event) {
+                            case 'delete':
+                                deleterole(obj.data);
+                                break;
+                            case 'edit':
+                                editrole(obj.data);
+                                break;
+                        }
+                    });
+
+
+
+                });
+
+
+            });
+        }
+
+        // 编辑角色
+        function editrole(data) {
+            let id = data.rid;
+            layer.open({
+                id: 'editrole', // 弹出层ID
+                type: 2, // 类型(2 框架页)
+                anim: 1, // 弹出动画
+                title: '编辑菜单', // 弹出层标题
+                area: ['50%', '60%'], // 弹出层大小
+                scrollbar: true,
+                method: 'get', // 请求方式
+                content: '/role/editRole/?id=' + id, //这里content是一个普通的String
+            });
+        }
+
+
+
+
+
+    </script>
+
+    <script type="text/html" id="barDemo">
+        <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="edit">修改</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delete">删除</a>
+    </script>
+</head>
+
+<body class="layui-bg-gray">
+<div class="layui-tab layui-card">
+    <div class="layui-tab-content">
+        <div class="cBody">
+            <form class="layui-form" action="#" method="post">
+                <div class="layui-form-item">
+                    <div class="layui-input-inline">
+                        <input type="text" name="rname" id="rname" placeholder="请输入角色名称" autocomplete="off"
+                               class="layui-input">
+                    </div>
+                    <button class="layui-btn" lay-submit lay-filter="selectRole">
+                        <i class="layui-icon layui-icon-search"></i> 检索
+                    </button>
+                    <button id="addrole" class="layui-btn layui-btn-normal" type="button">
+                        <i class="layui-icon layui-icon-add-1"></i> 添加
+                    </button>
+
+                </div>
+            </form>
+            <table id="roleList" lay-filter="table"></table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

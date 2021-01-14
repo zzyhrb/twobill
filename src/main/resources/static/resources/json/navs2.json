@@ -1,0 +1,76 @@
+[
+
+	{
+		"title": "基础设置",
+		"icon": "&#xe716;",
+		"href": "",
+		"spread": false,
+		"children": [
+			{
+				"title": "机构管理",
+				"icon": "&#xe691;",
+				"href": "/power/page",
+				"spread": false
+			},
+			{
+				"title": "菜单管理",
+				"icon": "&#xe60a;",
+				"href": "/sys/toMenu",
+				"spread": false
+
+			},{
+				"title": "人员管理",
+				"icon": "&#xe613;",
+				"href": "/sys/touser",
+				"spread": false
+
+			},{
+				"title": "角色管理",
+				"icon": "&#xe612;",
+				"href": "/role/page",
+				"spread": false
+			},{
+				"title": "设备管理",
+				"icon": "&#xe631;",
+				"href": "/sys/toequm",
+				"spread": false
+
+			}
+		]
+	},
+	{
+		"title": "检测统计",
+		"icon": "&#xe630;",
+		"href": "",
+		"spread": false,
+		"children": [
+			{
+				"title": "实时数据",
+				"icon": "&#xe61c;",
+				"href": "/Counts/page",
+				"spread": false
+			},
+			{
+				"title": "护理用户",
+				"icon": "&#xe609;",
+				"href": "/Counts/c_cuserList",
+				"spread": false
+
+			}
+		]
+	},
+	{
+		"title": "统计报表",
+		"icon": "&#xe62c;",
+		"href": "",
+		"spread": false,
+		"children": [
+			{
+				"title": "销售设备",
+				"icon": "&#xe629;",
+				"href": "/power/page",
+				"spread": false
+			}
+		]
+	}
+]
